@@ -132,7 +132,7 @@ async function login(){
  msg("Giriş yapılıyor...");
  const {error}=await sb.auth.signInWithPassword({email:e,password:p});
  if(error){msg(error.message);return}
- await init();
+
 }
 
 async function logout(){
