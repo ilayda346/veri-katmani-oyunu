@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -5,6 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Veri Katmanı | Canlı Sınıf Oyunu</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#eef2ff;font-family:Arial,sans-serif}
@@ -24,12 +26,15 @@ button.danger{background:#b91c1c}
 small,.muted{color:#a8b5ce}
 table{width:100%;border-collapse:collapse}
 td,th{text-align:left;padding:12px;border-bottom:1px solid #334155}
-#message{white-space:pre-wrap;color:#fbbf24}
+#message{white-space:pre-wrap;color:#fbbf24;margin:10px 0}
 .tag{display:inline-block;background:#1d4ed8;padding:6px 10px;border-radius:20px}
 .flex{display:flex;gap:10px;flex-wrap:wrap}
 .flex button{flex:1;min-width:140px}
+.question-button{text-align:left;background:#1d2a44}
+.active-box{background:#0c1528;border:1px solid #2563eb;border-radius:12px;padding:18px;margin:12px 0}
 </style>
 </head>
+
 <body>
 <header>
 <h1>VERİ KATMANI</h1>
@@ -38,42 +43,60 @@ td,th{text-align:left;padding:12px;border-bottom:1px solid #334155}
 </header>
 
 <main>
+
 <div id="message"></div>
 
 <section class="panel" id="auth">
 <h2>Oyuna Katıl</h2>
 <input id="name" placeholder="Ad Soyad">
 <input id="username" placeholder="Kullanıcı adı">
-<input id="email" placeholder="E-posta">
+<input id="email" type="email" placeholder="E-posta">
 <input id="password" type="password" placeholder="Şifre (en az 6 karakter)">
+
 <div class="flex">
 <button onclick="signup()">Kayıt Ol</button>
 <button class="secondary" onclick="login()">Giriş Yap</button>
 </div>
+
 <small>İlk kez katılıyorsan kayıt ol. Daha önce kayıt olduysan giriş yap.</small>
 </section>
 
 <section class="panel hidden" id="game">
+
 <div class="flex">
 <div style="flex:1"><h3 id="welcome"></h3></div>
 <button class="secondary" style="max-width:150px" onclick="logout()">Çıkış</button>
 </div>
+
 <div id="studentArea">
 <h2>Aktif Soru</h2>
 <div id="questionArea">Öğretmen henüz soru açmadı.</div>
 </div>
+
 <div id="adminArea" class="hidden">
+
 <h2>Öğretmen Paneli</h2>
+
 <div class="panel">
-<h3>Soru Kontrolü</h3>
-<div id="questionList"></div>
+<h3>Şu Anki Aktif Soru</h3>
+<div id="activeAdminQuestion" class="active-box">
+Henüz aktif soru yok.
+</div>
 <button class="danger" onclick="closeQuestion()">Aktif Soruyu Kapat</button>
 </div>
+
+<div class="panel">
+<h3>Soru Kontrolü</h3>
+<p class="muted">Açmak istediğin soruya tıkla.</p>
+<div id="questionList">Sorular yükleniyor...</div>
+</div>
+
 <div class="panel">
 <h3>Katılımcı Cevapları</h3>
 <button class="secondary" onclick="loadAnswers()">Cevapları Yenile</button>
 <div id="answersArea">Henüz yüklenmedi.</div>
 </div>
+
 </div>
 </section>
 
@@ -90,221 +113,483 @@ const SUPABASE_URL = "https://gtfgpapzoickjxuzpwhz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_jdczh7tQYcEyvmplrW9PqA_kGNln29o";
 
 const sb = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 let currentUser=null;
 let currentProfile=null;
 let selectedAnswer=null;
 let activeQuestion=null;
+let initializing=false;
 
-function msg(t){document.getElementById("message").textContent=t}
+function msg(t){
+ document.getElementById("message").textContent=t;
+}
+
 function escapeHtml(s){
  return String(s??"").replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
  }[c]));
 }
 
 async function signup(){
+
  const n=document.getElementById("name").value.trim();
  const u=document.getElementById("username").value.trim();
  const e=document.getElementById("email").value.trim();
  const p=document.getElementById("password").value;
 
- if(!n||!u||!e||!p){msg("Tüm alanları doldur.");return}
- if(p.length<6){msg("Şifre en az 6 karakter olmalı.");return}
+ if(!n||!u||!e||!p){
+  msg("Tüm alanları doldur.");
+  return;
+ }
+
+ if(p.length<6){
+  msg("Şifre en az 6 karakter olmalı.");
+  return;
+ }
 
  msg("Kayıt yapılıyor...");
+
  const {data,error}=await sb.auth.signUp({
-  email:e,password:p,
-  options:{data:{full_name:n,username:u}}
+  email:e,
+  password:p,
+  options:{
+   data:{
+    full_name:n,
+    username:u
+   }
+  }
  });
- if(error){msg(error.message);return}
+
+ if(error){
+  msg(error.message);
+  return;
+ }
+
  if(data.session){
   msg("Kayıt başarılı!");
   await init();
  }else{
-  msg("Kayıt oluşturuldu. E-posta doğrulaması isteniyorsa e-postanı kontrol et, ardından giriş yap.");
+  msg("Kayıt oluşturuldu. Giriş yapabilirsin.");
  }
 }
 
 async function login(){
+
  const e=document.getElementById("email").value.trim();
  const p=document.getElementById("password").value;
- if(!e||!p){msg("E-posta ve şifre gir.");return}
- msg("Giriş yapılıyor...");
- const {error}=await sb.auth.signInWithPassword({email:e,password:p});
- if(error){msg(error.message);return}
 
+ if(!e||!p){
+  msg("E-posta ve şifre gir.");
+  return;
+ }
+
+ msg("Giriş yapılıyor...");
+
+ const {error}=await sb.auth.signInWithPassword({
+  email:e,
+  password:p
+ });
+
+ if(error){
+  msg(error.message);
+  return;
+ }
+
+ await init();
 }
 
 async function logout(){
+
  await sb.auth.signOut();
+
  currentUser=null;
  currentProfile=null;
+ activeQuestion=null;
+ selectedAnswer=null;
+
  document.getElementById("auth").classList.remove("hidden");
  document.getElementById("game").classList.add("hidden");
- document.getElementById("adminArea").classList.add("hidden");
+
  msg("Çıkış yapıldı.");
 }
 
 async function init(){
- const {data:{user}}=await sb.auth.getUser();
- if(!user)return;
- currentUser=user;
 
- const {data:profile,error}=await sb.from("profiles")
- .select("*").eq("id",user.id).single();
+ if(initializing)return;
+ initializing=true;
 
- if(error){msg("Profil alınamadı: "+error.message);return}
- currentProfile=profile;
+ try{
 
- document.getElementById("auth").classList.add("hidden");
- document.getElementById("game").classList.remove("hidden");
- document.getElementById("welcome").textContent=
- "Hoş geldin, "+(profile.full_name||profile.username||"Öğrenci");
+  const {data:{user},error:userError}=await sb.auth.getUser();
 
- const isAdmin=profile.role==="admin";
- document.getElementById("adminArea").classList.toggle("hidden",!isAdmin);
- document.getElementById("studentArea").classList.toggle("hidden",isAdmin);
+  if(userError)throw userError;
+  if(!user)return;
 
- if(isAdmin)await loadQuestions();
- else await loadActiveQuestion();
+  currentUser=user;
 
- await loadLeaderboard();
+  const {data:profile,error}=await sb
+   .from("profiles")
+   .select("*")
+   .eq("id",user.id)
+   .single();
+
+  if(error)throw error;
+
+  currentProfile=profile;
+
+  document.getElementById("auth").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+
+  document.getElementById("welcome").textContent=
+   "Hoş geldin, "+(profile.full_name||profile.username||"Öğrenci");
+
+  const isAdmin=profile.role==="admin";
+
+  document.getElementById("adminArea").classList.toggle("hidden",!isAdmin);
+  document.getElementById("studentArea").classList.toggle("hidden",isAdmin);
+
+  if(isAdmin){
+   await loadQuestions();
+   await loadAdminActiveQuestion();
+   await loadAnswers();
+  }else{
+   await loadActiveQuestion();
+  }
+
+  await loadLeaderboard();
+
+ }catch(error){
+  msg("Başlatma hatası: "+error.message);
+ }finally{
+  initializing=false;
+ }
 }
 
-async function loadActiveQuestion(){
- const {data,error}=await sb.rpc("get_active_question");
- if(error){msg("Soru yükleme hatası: "+error.message);return}
- activeQuestion=data;
+async function loadQuestions(){
 
- const area=document.getElementById("questionArea");
+ const area=document.getElementById("questionList");
+
+ area.textContent="Sorular yükleniyor...";
+
+ const {data,error}=await sb
+  .from("questions")
+  .select("id,question_text")
+  .order("id");
+
+ if(error){
+  area.textContent="Sorular alınamadı: "+error.message;
+  return;
+ }
+
+ if(!data||data.length===0){
+  area.textContent="Veritabanında soru bulunamadı.";
+  return;
+ }
+
+ area.innerHTML="<p>Toplam "+data.length+" soru bulundu.</p>";
+
+ data.forEach((q,index)=>{
+
+  const b=document.createElement("button");
+
+  b.className="question-button";
+  b.textContent="▶ "+(index+1)+". "+q.question_text;
+
+  b.onclick=()=>openQuestion(q.id);
+
+  area.appendChild(b);
+ });
+}
+
+async function loadAdminActiveQuestion(){
+
+ const area=document.getElementById("activeAdminQuestion");
+
+ const {data,error}=await sb.rpc("get_active_question");
+
+ if(error){
+  area.textContent="Aktif soru alınamadı: "+error.message;
+  return;
+ }
+
  if(!data){
-  area.innerHTML="<h3>⏳ Öğretmen henüz soru açmadı.</h3><p>Yeni soru açıldığında burada görünecek.</p>";
+  area.innerHTML="<p>Şu anda açık soru yok.</p>";
   return;
  }
 
  let opts=data.options;
- if(typeof opts==="string"){try{opts=JSON.parse(opts)}catch(e){}}
- if(!Array.isArray(opts)){area.innerHTML="Soru seçenekleri okunamadı.";return}
+
+ if(typeof opts==="string"){
+  try{opts=JSON.parse(opts)}catch(e){}
+ }
 
  area.innerHTML=`
- <h3>${escapeHtml(data.question_text)}</h3>
- <p>⭐ ${escapeHtml(data.points)} puan</p>
- <div id="options"></div>
- <button onclick="sendAnswer()">Cevabı Gönder</button>`;
+  <h3>${escapeHtml(data.question_text)}</h3>
+  <p>⭐ ${escapeHtml(data.points)} puan</p>
+  <h4>Seçenekler</h4>
+  <div id="adminOptions"></div>
+ `;
+
+ const optionsArea=document.getElementById("adminOptions");
+
+ if(Array.isArray(opts)){
+  opts.forEach((o,i)=>{
+   const label=typeof o==="string"
+    ?o
+    :(o.text??o.label??o.value??String(o));
+
+   const p=document.createElement("p");
+   p.textContent=(i+1)+". "+label;
+   optionsArea.appendChild(p);
+  });
+ }
+}
+
+async function openQuestion(id){
+
+ msg("Soru açılıyor...");
+
+ const {error}=await sb.rpc("admin_set_question",{
+  p_question_id:id
+ });
+
+ if(error){
+  msg("Soru açılamadı: "+error.message);
+  return;
+ }
+
+ msg("Soru açıldı!");
+
+ await loadAdminActiveQuestion();
+ await loadAnswers();
+}
+
+async function closeQuestion(){
+
+ msg("Soru kapatılıyor...");
+
+ const {error}=await sb.rpc("admin_close_question");
+
+ if(error){
+  msg("Soru kapatılamadı: "+error.message);
+  return;
+ }
+
+ msg("Soru kapatıldı.");
+
+ await loadAdminActiveQuestion();
+ await loadAnswers();
+}
+
+async function loadActiveQuestion(){
+
+ const {data,error}=await sb.rpc("get_active_question");
+
+ if(error){
+  msg("Soru yükleme hatası: "+error.message);
+  return;
+ }
+
+ activeQuestion=data;
+
+ const area=document.getElementById("questionArea");
+
+ if(!data){
+  selectedAnswer=null;
+  area.innerHTML=`
+   <h3>⏳ Öğretmen henüz soru açmadı.</h3>
+   <p>Yeni soru açıldığında burada görünecek.</p>
+  `;
+  return;
+ }
+
+ let opts=data.options;
+
+ if(typeof opts==="string"){
+  try{opts=JSON.parse(opts)}catch(e){}
+ }
+
+ if(!Array.isArray(opts)){
+  area.innerHTML="Soru seçenekleri okunamadı.";
+  return;
+ }
+
+ area.innerHTML=`
+  <h3>${escapeHtml(data.question_text)}</h3>
+  <p>⭐ ${escapeHtml(data.points)} puan</p>
+  <div id="options"></div>
+  <button onclick="sendAnswer()">Cevabı Gönder</button>
+ `;
+
  const div=document.getElementById("options");
 
  opts.forEach((o,i)=>{
-  let label=typeof o==="string"?o:(o.text??o.label??o.value??String(o));
+
+  const label=typeof o==="string"
+   ?o
+   :(o.text??o.label??o.value??String(o));
+
   const b=document.createElement("div");
+
   b.className="option";
   b.textContent=label;
+
   b.onclick=()=>{
    selectedAnswer=label;
-   [...div.children].forEach(x=>x.style.border="none");
+
+   [...div.children].forEach(x=>{
+    x.style.border="none";
+   });
+
    b.style.border="2px solid #60a5fa";
   };
+
   div.appendChild(b);
  });
 }
 
 async function sendAnswer(){
- if(!activeQuestion){msg("Aktif soru yok.");return}
- if(selectedAnswer===null){msg("Bir seçenek seç.");return}
+
+ if(!activeQuestion){
+  msg("Aktif soru yok.");
+  return;
+ }
+
+ if(selectedAnswer===null){
+  msg("Bir seçenek seç.");
+  return;
+ }
 
  msg("Cevap gönderiliyor...");
+
  const {data,error}=await sb.rpc("submit_answer",{
   p_question_id:activeQuestion.id,
   p_answer_text:selectedAnswer
  });
- if(error){msg("Cevap gönderilemedi: "+error.message);return}
+
+ if(error){
+  msg("Cevap gönderilemedi: "+error.message);
+  return;
+ }
+
  msg("Cevabın gönderildi!");
+
  selectedAnswer=null;
+
  await loadActiveQuestion();
  await loadLeaderboard();
 }
 
 async function loadLeaderboard(){
+
  const area=document.getElementById("leaderboard");
+
  const {data,error}=await sb.rpc("get_leaderboard");
- if(error){area.textContent="Sıralama alınamadı: "+error.message;return}
- if(!data||!data.length){area.textContent="Henüz puan yok.";return}
 
- let rows=data;
- area.innerHTML=`<table><thead><tr><th>#</th><th>Katılımcı</th><th>Puan</th></tr></thead><tbody>
- ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.full_name||r.username||r.name||"Öğrenci")}</td><td>${escapeHtml(r.score??r.points??0)}</td></tr>`).join("")}
- </tbody></table>`;
-}
-async function loadQuestions(){
-  const area = document.getElementById("questionList");
-  area.textContent = "Sorular kontrol ediliyor...";
+ if(error){
+  area.textContent="Sıralama alınamadı: "+error.message;
+  return;
+ }
 
-  const {data, error} = await sb
-    .from("questions")
-    .select("id, question_text")
-    .order("id");
+ if(!data||!data.length){
+  area.textContent="Henüz puan yok.";
+  return;
+ }
 
-  if(error){
-    area.textContent = "HATA: " + error.message;
-    return;
-  }
-
-  if(!data || data.length === 0){
-    area.textContent = "Veritabanından 0 soru geldi.";
-    return;
-  }
-
-  area.innerHTML = "<p>Bulunan soru sayısı: " + data.length + "</p>";
-
-  data.forEach(q => {
-    const b = document.createElement("button");
-    b.textContent = "▶ Soruyu Aç: " + q.question_text;
-    b.onclick = () => openQuestion(q.id);
-    area.appendChild(b);
-  });
-}
-async function openQuestion(id){
- msg("Soru açılıyor...");
- const {error}=await sb.rpc("admin_set_question",{p_question_id:id});
- if(error){msg("Soru açılamadı: "+error.message);return}
- msg("Soru açıldı.");
- await loadAnswers();
-}
-
-async function closeQuestion(){
- msg("Soru kapatılıyor...");
- const {error}=await sb.rpc("admin_close_question");
- if(error){msg("Soru kapatılamadı: "+error.message);return}
- msg("Soru kapatıldı.");
- await loadAnswers();
+ area.innerHTML=`
+  <table>
+   <thead>
+    <tr>
+     <th>#</th>
+     <th>Katılımcı</th>
+     <th>Puan</th>
+    </tr>
+   </thead>
+   <tbody>
+    ${data.map((r,i)=>`
+     <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(r.full_name||r.username||r.name||"Öğrenci")}</td>
+      <td>${escapeHtml(r.score??r.points??0)}</td>
+     </tr>
+    `).join("")}
+   </tbody>
+  </table>
+ `;
 }
 
 async function loadAnswers(){
+
  const area=document.getElementById("answersArea");
+
+ area.textContent="Cevaplar yükleniyor...";
+
  const {data,error}=await sb.rpc("admin_answers");
- if(error){area.textContent="Cevaplar alınamadı: "+error.message;return}
- if(!data||!data.length){area.textContent="Henüz cevap yok.";return}
- area.innerHTML=`<table><thead><tr><th>Katılımcı</th><th>Soru</th><th>Cevap</th><th>Doğru</th><th>Puan</th></tr></thead><tbody>
- ${data.map(r=>`<tr><td>${escapeHtml(r.full_name||r.username||r.name)}</td><td>${escapeHtml(r.question_text||r.question_id)}</td><td>${escapeHtml(r.answer_text)}</td><td>${r.is_correct?"✔":"✖"}</td><td>${escapeHtml(r.points_awarded??0)}</td></tr>`).join("")}
- </tbody></table>`;
+
+ if(error){
+  area.textContent="Cevaplar alınamadı: "+error.message;
+  return;
+ }
+
+ if(!data||!data.length){
+  area.textContent="Henüz cevap yok.";
+  return;
+ }
+
+ area.innerHTML=`
+  <table>
+   <thead>
+    <tr>
+     <th>Katılımcı</th>
+     <th>Soru</th>
+     <th>Cevap</th>
+     <th>Doğru</th>
+     <th>Puan</th>
+    </tr>
+   </thead>
+   <tbody>
+    ${data.map(r=>`
+     <tr>
+      <td>${escapeHtml(r.full_name||r.username||r.name||"Öğrenci")}</td>
+      <td>${escapeHtml(r.question_text||r.question_id)}</td>
+      <td>${escapeHtml(r.answer_text)}</td>
+      <td>${r.is_correct?"✔":"✖"}</td>
+      <td>${escapeHtml(r.points_awarded??0)}</td>
+     </tr>
+    `).join("")}
+   </tbody>
+  </table>
+ `;
 }
 
-sb.auth.onAuthStateChange(async (event,session)=>{
- if(event==="SIGNED_IN" && session){
-   await init();
- }
-});
+// Sayfa yeniden açıldığında mevcut oturumu kontrol et.
 (async()=>{
  const {data:{session}}=await sb.auth.getSession();
- if(session)await init();
+
+ if(session){
+  await init();
+ }
 })();
 
-// Oyunun durumunu belirli aralıklarla yenile
+// Öğrenci ekranını düzenli yenile.
 setInterval(async()=>{
- if(currentUser&&currentProfile&&currentProfile.role!=="admin"){
-  await loadActiveQuestion();
-  await loadLeaderboard();
+
+ if(currentUser&&currentProfile){
+
+  if(currentProfile.role!=="admin"){
+   await loadActiveQuestion();
+   await loadLeaderboard();
+  }else{
+   await loadAdminActiveQuestion();
+  }
  }
+
 },8000);
+
 </script>
 </body>
 </html>
