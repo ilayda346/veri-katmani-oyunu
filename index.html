@@ -1,105 +1,295 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Veri Katmanı | Sınıf Meydan Okuması</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veri Katmanı | Canlı Sınıf Oyunu</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#0b1220;--panel:#141f32;--panel2:#1c2b43;--text:#f0f5ff;--muted:#a6b7d1;--accent:#6ee7c5;--blue:#7ab8ff;--gold:#ffce70;--red:#ff7888;--line:#344762}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#253b58 0,transparent 35%),var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial}
-header{padding:22px max(20px,4vw);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}h1{margin:0;font-size:clamp(25px,4vw,36px)}header p{color:var(--muted);margin:6px 0 0}.badge{border:1px solid #52718f;border-radius:999px;padding:7px 12px;color:var(--accent);font-size:13px}
-main{max-width:1200px;margin:auto;padding:0 18px 35px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:19px;box-shadow:0 10px 28px #0002;margin-bottom:16px}h2{font-size:20px;margin:0 0 14px}.muted{color:var(--muted);font-size:14px;line-height:1.5}.topgrid,.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.wide{grid-column:1/-1}
-table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}.small{font-size:12px;color:var(--muted)}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.stat{padding:9px 12px;border-radius:12px;background:var(--panel2);color:var(--muted)}.stat strong{color:var(--text)}
-input,select{background:#0e192a;border:1px solid #435a77;border-radius:9px;color:var(--text);padding:10px;font:inherit;min-width:0}input::placeholder{color:#71849f}.formline{display:flex;gap:8px;flex-wrap:wrap}.formline input{flex:1}button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 13px;background:var(--accent);color:#0b1927;font-weight:700}button.secondary{background:#344b68;color:#fff}button.danger{background:#593340;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
-.question{font-size:19px;line-height:1.5;margin:12px 0 16px}.code{white-space:pre-wrap;overflow-x:auto;background:#08111d;border:1px solid #334a63;padding:13px;border-radius:12px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#bce9db;margin:12px 0}.choices{display:grid;gap:9px}.choice{text-align:left;background:#22344b;border:1px solid #405a77;color:white;padding:12px;border-radius:11px;font-weight:500}.choice:hover{border-color:var(--accent)}.choice.correct{border-color:#54d9a5;background:#164b3d}.choice.wrong{border-color:var(--red);background:#522d3c}.choice:disabled{cursor:default}
-.feedback{display:none;padding:14px;border-radius:12px;margin-top:12px;line-height:1.5}.feedback.show{display:block}.feedback.good{background:#123e35;border:1px solid #43bb8e}.feedback.bad{background:#492c3b;border:1px solid #b85973}
-.evidence{background:#102c3b;border:1px solid #34717c;padding:14px;border-radius:12px;margin-top:12px}.evidence h3{margin:0 0 8px;color:var(--accent)}.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.tag{display:inline-block;background:#2d425e;color:#a9d1ff;border-radius:7px;padding:4px 8px;font-size:12px}
-.listbox{max-height:250px;overflow:auto}.rank{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--line);gap:10px}.rank b{color:var(--gold)}
-footer{text-align:center;color:var(--muted);font-size:13px;padding:15px}.toast{color:var(--accent);min-height:20px}
-@media(max-width:800px){.topgrid,.grid{grid-template-columns:1fr}.wide{grid-column:auto}header{align-items:flex-start}}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1020;color:#eef2ff;font-family:Arial,sans-serif}
+header{padding:22px;text-align:center;background:#131c33;border-bottom:1px solid #283553}
+h1{margin:0;color:#7dd3fc}
+header p{color:#9baac6}
+main{max-width:950px;margin:auto;padding:20px}
+.panel{background:#141e35;border:1px solid #293956;border-radius:16px;padding:20px;margin:16px 0}
+input,button{width:100%;padding:13px;margin:8px 0;border-radius:10px;border:1px solid #334563;background:#0c1528;color:white;font-size:16px}
+button{background:#2563eb;border:none;font-weight:bold;cursor:pointer}
+button:hover{opacity:.85}
+button.secondary{background:#334155}
+button.danger{background:#b91c1c}
+.option{display:block;padding:14px;margin:10px 0;background:#1d2a44;border-radius:12px;cursor:pointer}
+.option:hover{background:#283c5e}
+.hidden{display:none!important}
+small,.muted{color:#a8b5ce}
+table{width:100%;border-collapse:collapse}
+td,th{text-align:left;padding:12px;border-bottom:1px solid #334155}
+#message{white-space:pre-wrap;color:#fbbf24}
+.tag{display:inline-block;background:#1d4ed8;padding:6px 10px;border-radius:20px}
+.flex{display:flex;gap:10px;flex-wrap:wrap}
+.flex button{flex:1;min-width:140px}
 </style>
 </head>
 <body>
-<header><div><h1>⚡ Veri Katmanı: Sınıf Meydan Okuması</h1><p>SQL • MongoDB • Prisma • REST API • Kalıcı CRUD</p></div><div class="badge">Takım / sınıf içi interaktif oyun</div></header>
+<header>
+<h1>VERİ KATMANI</h1>
+<p>PostgreSQL · MongoDB · Prisma ORM</p>
+<div class="tag">Sınıf Meydan Okuması</div>
+</header>
+
 <main>
+<div id="message"></div>
+
+<section class="panel" id="auth">
+<h2>Oyuna Katıl</h2>
+<input id="name" placeholder="Ad Soyad">
+<input id="username" placeholder="Kullanıcı adı">
+<input id="email" placeholder="E-posta">
+<input id="password" type="password" placeholder="Şifre (en az 6 karakter)">
+<div class="flex">
+<button onclick="signup()">Kayıt Ol</button>
+<button class="secondary" onclick="login()">Giriş Yap</button>
+</div>
+<small>İlk kez katılıyorsan kayıt ol. Daha önce kayıt olduysan giriş yap.</small>
+</section>
+
+<section class="panel hidden" id="game">
+<div class="flex">
+<div style="flex:1"><h3 id="welcome"></h3></div>
+<button class="secondary" style="max-width:150px" onclick="logout()">Çıkış</button>
+</div>
+<div id="studentArea">
+<h2>Aktif Soru</h2>
+<div id="questionArea">Öğretmen henüz soru açmadı.</div>
+</div>
+<div id="adminArea" class="hidden">
+<h2>Öğretmen Paneli</h2>
+<div class="panel">
+<h3>Soru Kontrolü</h3>
+<div id="questionList"></div>
+<button class="danger" onclick="closeQuestion()">Aktif Soruyu Kapat</button>
+</div>
+<div class="panel">
+<h3>Katılımcı Cevapları</h3>
+<button class="secondary" onclick="loadAnswers()">Cevapları Yenile</button>
+<div id="answersArea">Henüz yüklenmedi.</div>
+</div>
+</div>
+</section>
+
 <section class="panel">
-<h2>👥 Katılımcılar / takım puanları</h2>
-<div class="formline"><input id="participant" placeholder="Öğrenci veya takım adı ekle"><button id="addParticipant">Katılımcı ekle</button><select id="activeParticipant"></select></div>
-<div class="stats"><div class="stat">Soru: <strong id="qnum"></strong></div><div class="stat">Puan: <strong id="score">0</strong></div><div class="stat">Katılımcı: <strong id="activeName">—</strong></div></div>
-<div class="listbox" id="scoreboard"></div>
+<h2>🏆 Canlı Sıralama</h2>
+<button class="secondary" onclick="loadLeaderboard()">Sıralamayı Yenile</button>
+<div id="leaderboard">Sıralama yükleniyor...</div>
 </section>
-<section class="topgrid">
-<div class="panel">
-<h2>🗂️ Uygulama verisi: Kurs kayıtları</h2>
-<div class="stats"><div class="stat">Kayıt sayısı: <strong id="count">0</strong></div><div class="stat">Kayıt saklama: <strong>localStorage</strong></div></div>
-<table><thead><tr><th>ID</th><th>Öğrenci</th><th>Ders</th><th>Not</th></tr></thead><tbody id="dataTable"></tbody></table>
-<div class="controls"><button class="secondary" id="restore">Örnek veriyi geri yükle</button><button class="danger" id="clearData">Tabloyu boşalt</button></div>
-</div>
-<div class="panel">
-<h2>🧪 Kalıcılık kanıtı</h2>
-<p class="muted">Bu test, uygulamanın veriyi tarayıcı kayıt alanına yazdığını ve sayfa yenilendikten sonra tekrar okuyabildiğini gösterir. Gerçek PostgreSQL testinde uygulama sunucusunu yeniden başlatıp GET isteği tekrar yapılır.</p>
-<div class="evidence"><h3>Yenileme testi</h3><div id="persistStatus">Henüz test edilmedi.</div><div class="controls"><button id="persistTest">F5 yenileme testi simülasyonu</button></div></div>
-<p class="small">Not: Bu sınıf oyunu tarayıcı içi demo. PostgreSQL/Prisma bağlantısı yerine localStorage kullanır; gerçek DB bağlantısı olarak sunulmamalıdır.</p>
-</div></section>
-<section class="grid">
-<div class="panel">
-<h2>🎯 Meydan okuma</h2><div class="tag" id="topic"></div><div class="question" id="question"></div><div class="code" id="code" style="display:none"></div><div class="choices" id="choices"></div><div id="feedback" class="feedback"></div>
-<div class="controls"><button id="next">Sonraki soru →</button><button class="secondary" id="replay">Soruyu yeniden göster</button></div>
-</div>
-<div class="panel">
-<h2>🧾 İşlem açıklaması / sonuç</h2><div id="explain">Bir cevap seçtiğinde doğru seçeneğin açıklaması ve varsa uygulanan değişiklik gösterilir.</div><div id="result" class="evidence" style="display:none"><h3>Uygulama sonucu</h3><div id="resultText"></div></div>
-<h2 style="margin-top:18px">📜 Son işlemler</h2><div id="log" class="listbox muted">Henüz işlem yok.</div>
-<div class="controls"><button class="secondary" id="resetGame">Oyunu ve puanları sıfırla</button></div>
-</div>
-</section>
-</main><footer>İçerik, Veri Katmanı: PostgreSQL, MongoDB ve Prisma ORM sunum konularına göre hazırlanmış sınıf etkinliğidir.</footer>
+
+</main>
+
 <script>
-const seed=[
-{id:1,name:"Ece",course:"PostgreSQL",grade:90},
-{id:2,name:"Can",course:"Prisma ORM",grade:82},
-{id:3,name:"Mert",course:"MongoDB",grade:76},
-{id:4,name:"Zeynep",course:"REST API",grade:95}
-];
-const qset=[
-{topic:"Prisma Client • READ",q:"Aşağıdaki sorgu tüm kurs kayıtlarını getirir. Kodda hangi yöntem eksik/yanlış kullanılmıştır?",code:'const rows = await prisma.kayit.findMany({\\n  where: { grade: { gte: 80 } },\\n  orderBy: { grade: "desc" }\\n});',opts:["findMany() birden fazla eşleşen kaydı döndürebilir; kod doğru, 80 ve üzeri notları azalan sırayla getirir.","findMany() yalnızca tek kayıt getirir.","orderBy yalnızca MongoDB'de çalışır.","where kullanılınca kayıtlar silinir."],ans:0,ex:"findMany birden fazla kayıt döndürür. where filtreler, orderBy sıralar. Bu örnekte notu 80 veya üzeri olanlar azalan sırada listelenir.",kind:"read",addScore:2},
-{topic:"Prisma Client • DELETE",q:"ID'si 3 olan kaydı silmek istiyoruz. Hangi Prisma kodu hedef kaydı siler?",code:'await prisma.kayit.delete({\\n  where: { id: 3 }\\n});',opts:["deleteMany({ where: { grade: 3 } })","delete({ where: { id: 3 } })","findUnique({ where: { id: 3 } })","create({ data: { id: 3 } })"],ans:1,ex:"delete() benzersiz alan üzerinden tek kaydı siler. where: { id: 3 } hedef kaydı belirler. Demo tablosundan ID 3 silindi.",kind:"delete",id:3,addScore:3},
-{topic:"Prisma Client • CREATE",q:"Yeni bir kayıt oluşturmak için aşağıdaki hangi sorgu doğru şekilde create kullanır?",code:'await prisma.kayit.create({\\n  data: { name: "Deniz", course: "SQL", grade: 88 }\\n});',opts:["create({ where: { name: 'Deniz' } })","update({ data: { name: 'Deniz' } })","create({ data: { name: 'Deniz', course: 'SQL', grade: 88 } })","delete({ data: { name: 'Deniz' } })"],ans:2,ex:"create yeni kayıt oluşturur. data alanında yeni kaydın değerleri yer alır. Demo tablosuna Deniz adlı SQL kaydı eklendi.",kind:"add",record:{name:"Deniz",course:"SQL",grade:88},addScore:3},
-{topic:"Prisma Client • UPDATE",q:"ID'si 2 olan Can'ın notunu 100 yapmak istiyoruz. Doğru sorgu hangisi?",code:'await prisma.kayit.update({\\n  where: { id: 2 },\\n  data: { grade: 100 }\\n});',opts:["update({ where: { id: 2 }, data: { grade: 100 } })","create({ where: { id: 2 }, data: { grade: 100 } })","delete({ where: { id: 2 } })","findMany({ data: { grade: 100 } })"],ans:0,ex:"update() var olan kaydı değiştirir. where hedef ID'yi, data yeni notu belirler. Can'ın notu 100 olarak güncellendi.",kind:"update",id:2,grade:100,addScore:3},
-{topic:"Migration • Kalıcı şema",q:"Prisma modeline yeni bir alan eklediniz. Geliştirme ortamında değişikliği veritabanına uygulamak ve migration oluşturmak için hangi komut kullanılır?",code:'model Kayit {\\n  id     Int @id @default(autoincrement())\\n  name   String\\n  course String\\n  grade  Int\\n  status String? // yeni alan\\n}',opts:["npx prisma migrate dev --name add_status","node schema.prisma","npm delete status","npx prisma findMany"],ans:0,ex:"migrate dev geliştirme sırasında migration oluşturup uygular. Şema değişikliği sürümlenmiş bir migration ile veritabanına yansıtılır.",kind:"none",addScore:2},
-{topic:"Prisma Schema • Model",q:"Bu modelde id alanı hangi amaçla tanımlanmıştır?",code:'model Kayit {\\n  id     Int @id @default(autoincrement())\\n  name   String\\n  grade  Int\\n}',opts:["Her kayıt için benzersiz kimlik üretir; id primary key ve otomatik artar.","id alanı metin saklar.","Modelin veritabanına bağlanmasını engeller.","Tüm kayıtların id değerini aynı yapar."],ans:0,ex:"@id birincil anahtar tanımlar. @default(autoincrement()) kimliğin otomatik artmasını sağlar.",kind:"none",addScore:2},
-{topic:"SQL • Foreign Key",q:"Sipariş tablosundaki customer_id alanı, Müşteriler tablosundaki id alanına bağlı. Bu bağlantıyı hangi kavram tanımlar?",opts:["Foreign Key (Yabancı anahtar)","Index yalnızca","Document","Migration"],ans:0,ex:"Foreign Key bir tabloda başka tablonun anahtarına referans kurarak ilişkileri ve referans bütünlüğünü sağlar.",kind:"none",addScore:2},
-{topic:"Modelleme • Normalizasyon",q:"Sipariş satırlarının her birinde müşteri adı ve adresini tekrar tekrar tutmak yerine müşteriyi ayrı tabloda tutup customer_id ile bağlamak hangi amaca hizmet eder?",opts:["Normalizasyon ile tekrarları ve tutarsızlıkları azaltmaya","Veriyi mutlaka MongoDB'ye taşımaya","API'yi devre dışı bırakmaya","Her kayıt için yeni tablo oluşturmaya"],ans:0,ex:"Normalizasyon tekrarları ve güncelleme/silme/ekleme anomalilerini azaltır. Müşteri bilgisi ayrı tabloda tutulup sipariş FK ile bağlanabilir.",kind:"none",addScore:2},
-{topic:"MongoDB • Update",q:"MongoDB'de Ece'nin yaşını 23 yapmak için aşağıdaki sorguda doğru bölüm hangisidir?",code:'db.users.updateOne(\\n  { ad: "Ece" },\\n  { $set: { yas: 23 } }\\n);',opts:["$set, eşleşen belgedeki belirtilen alanı günceller.","insertOne yeni kullanıcı ekler.","find tüm belgeleri siler.","$set koleksiyonu yeniden adlandırır."],ans:0,ex:"updateOne filtreye uyan ilk belgeyi günceller; $set belirtilen alanı yeni değere getirir.",kind:"none",addScore:2},
-{topic:"SQL • DELETE güvenliği",q:"Aşağıdaki SQL çalıştırılırsa ne olur?",code:'DELETE FROM uyeler;',opts:["Yalnızca id=1 silinir.","Bütün satırlar silinir, tablo yapısı kalır.","Tablo tamamen kaldırılır.","Hiçbir şey olmaz."],ans:1,ex:"WHERE koşulu olmadığından tüm satırlar silinir; tablo yapısı kalır. DROP TABLE tablonun yapısını da kaldırır. Demo kayıtları temizlendi.",kind:"clear",addScore:3},
-{topic:"Prisma • Type-safe sorgu",q:"Prisma Client'ın tipli sorgular (type-safe) sunması neye yardımcı olur?",opts:["Şemaya göre alan ve tür hatalarını geliştirme sırasında fark etmeye","Veritabanını otomatik olarak silmeye","Her sorguyu SQL yerine HTML yapmaya","İnternet bağlantısını zorunlu kılmaya"],ans:0,ex:"Prisma Client şemadan türler üretir; yanlış alan adları veya tür uyuşmazlıkları gibi bazı hataları geliştirme aşamasında fark ettirir.",kind:"none",addScore:2},
-{topic:"Kalıcı CRUD • Kanıt",q:"Bir POST ile kayıt ekledikten sonra API sunucusunu yeniden başlatıp GET ile kaydı tekrar görmek, hangi durumu kanıtlar?",opts:["Verinin yalnızca geçici değişkende tutulduğunu","Kalıcı saklamanın çalıştığını; kaydın DB'den tekrar okunabildiğini","DELETE işleminin tamamlandığını","Migration'ın silindiğini"],ans:1,ex:"POST ile eklenen kayıt, sunucu yeniden başlatıldıktan sonra GET ile bulunabiliyorsa gerçek veritabanında kalıcı saklama gösterilmiş olur. Bu oyun ayrıca tarayıcı yenileme simülasyonu sunar.",kind:"persist",addScore:3},
-{topic:"PostgreSQL • Index",q:"Sık sorgulanan email alanına index eklemenin temel amacı nedir?",opts:["Okuma/sorgu erişimini hızlandırmaya yardımcı olmak; karşılığında ek alan ve yazma maliyeti olabilir.","Her kaydı otomatik silmek.","Foreign Key'i kaldırmak.","E-posta alanını zorunlu olarak şifrelemek."],ans:0,ex:"Index aramayı hızlandırabilir fakat depolama kullanır ve yazma işlemlerinde bakım maliyeti getirir. Her alana indeks eklemek doğru değildir.",kind:"none",addScore:2}
-];
-const DKEY="verikatmani_quiz_data_v2",PKEY="verikatmani_quiz_people_v2",SKEY="verikatmani_quiz_scores_v2",LKEY="verikatmani_quiz_logs_v2";
-let data=read(DKEY,seed),people=read(PKEY,[]),scores=read(SKEY,{}),logs=read(LKEY,[]),qi=0,locked=false;
-function read(k,f){try{let x=localStorage.getItem(k);return x?JSON.parse(x):structuredClone(f)}catch{return structuredClone(f)}}
-function save(){localStorage.setItem(DKEY,JSON.stringify(data));localStorage.setItem(PKEY,JSON.stringify(people));localStorage.setItem(SKEY,JSON.stringify(scores));localStorage.setItem(LKEY,JSON.stringify(logs))}
-function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderData(){document.getElementById("dataTable").innerHTML=data.map(r=>`<tr><td>${r.id}</td><td>${esc(r.name)}</td><td>${esc(r.course)}</td><td>${r.grade}</td></tr>`).join("");document.getElementById("count").textContent=data.length}
-function renderPeople(){let sel=document.getElementById("activeParticipant");let prev=sel.value;sel.innerHTML=people.map((p,i)=>`<option value="${i}">${esc(p)}</option>`).join("");if(people.length){sel.value=people.includes(prev)?prev:0;document.getElementById("activeName").textContent=people[sel.value]||people[0]}else{sel.innerHTML='<option value="">Katılımcı ekleyin</option>';document.getElementById("activeName").textContent="—"}renderScoreboard()}
-function renderScoreboard(){let div=document.getElementById("scoreboard");div.innerHTML=people.map((p,i)=>`<div class="rank"><span>${i+1}. ${esc(p)}</span><b>${scores[p]||0} puan</b></div>`).join("")||'<p class="muted">Katılımcı ekleyerek oyunu başlatın.</p>';document.getElementById("score").textContent=people.length?(scores[people[document.getElementById("activeParticipant").value]]||0):0}
-function renderLog(){document.getElementById("log").innerHTML=logs.length?logs.slice(0,12).map(x=>`<div class="rank"><span>${esc(x)}</span></div>`).join(""):"Henüz işlem yok."}
-function showQuestion(){locked=false;let q=qset[qi];document.getElementById("qnum").textContent=(qi+1)+"/"+qset.length;document.getElementById("topic").textContent=q.topic;document.getElementById("question").textContent=q.q;let code=document.getElementById("code");if(q.code){code.style.display="block";code.textContent=q.code.replaceAll("\\n","\n")}else code.style.display="none";let choices=document.getElementById("choices");choices.innerHTML="";q.opts.forEach((o,i)=>{let b=document.createElement("button");b.className="choice";b.textContent=String.fromCharCode(65+i)+") "+o;b.onclick=()=>choose(i);choices.appendChild(b)});let fb=document.getElementById("feedback");fb.className="feedback";fb.innerHTML="";document.getElementById("result").style.display="none";document.getElementById("explain").textContent="Cevabı seçin. Doğru yanıtta açıklama ve varsa işlem sonucu gösterilir."}
-function apply(q){let msg="";
-if(q.kind==="add"){let id=data.length?Math.max(...data.map(x=>x.id))+1:1;let r={id,...q.record};data.push(r);msg=`POST / create: ${r.name} adlı kayıt ${r.course} dersi ve ${r.grade} notuyla eklendi (ID ${id}).`}
-if(q.kind==="delete"){let r=data.find(x=>x.id===q.id);data=data.filter(x=>x.id!==q.id);msg=`DELETE: ID ${q.id} ${r? r.name+" adlı kayıt":""} tablodan silindi.`}
-if(q.kind==="update"){let r=data.find(x=>x.id===q.id);if(r){r.grade=q.grade;msg=`UPDATE: ID ${q.id} ${r.name} kaydının notu ${q.grade} olarak güncellendi.`}}
-if(q.kind==="read"){let rows=data.filter(x=>x.grade>=80).sort((a,b)=>b.grade-a.grade);msg="READ/GET: notu 80 ve üzeri kayıtlar, notlarına göre azalan sırada: "+rows.map(x=>`${x.name} (${x.grade})`).join(", ")+". Tablo değişmedi."}
-if(q.kind==="clear"){data=[];msg="DELETE: WHERE koşulu olmayan sorgu tüm satırları sildi. Tablo yapısı korunuyor."}
-if(q.kind==="persist"){msg="Kalıcılık kontrolü: tarayıcı saklama alanındaki veriler kaydedildi ve tekrar okunabiliyor. Gerçek API sunucusu/DB restart testi ayrıca yapılmalıdır."}
-renderData();localStorage.setItem(DKEY,JSON.stringify(data));return msg||q.ex}
-function choose(i){if(locked)return;locked=true;let q=qset[qi],correct=i===q.ans;document.querySelectorAll(".choice").forEach((b,j)=>{b.disabled=true;if(j===q.ans)b.classList.add("correct");if(j===i&&!correct)b.classList.add("wrong")});let fb=document.getElementById("feedback");fb.className="feedback show "+(correct?"good":"bad");fb.innerHTML=correct?"<b>✔ Doğru!</b>":`<b>✖ Yanlış cevap.</b> Doğru seçenek yeşil gösterildi.`;let msg=correct?apply(q):"Yanlış seçimde veri değişikliği uygulanmadı.";document.getElementById("explain").textContent=correct?q.ex:"Doğru cevabı inceleyin, nedenini açıklayın ve yeniden deneyin.";if(correct){if(q.kind==="add"||q.kind==="delete"||q.kind==="update"||q.kind==="clear"||q.kind==="read"){document.getElementById("resultText").textContent=msg;document.getElementById("result").style.display="block"}if(q.kind==="persist"){document.getElementById("resultText").textContent=msg;document.getElementById("result").style.display="block";document.getElementById("persistStatus").textContent="Test çalıştırıldı: kayıt alanı yeniden okundu."}let p=people[document.getElementById("activeParticipant").value];if(p){scores[p]=(scores[p]||0)+q.addScore;localStorage.setItem(SKEY,JSON.stringify(scores))}logs.unshift(`${q.topic} • ${msg}`);localStorage.setItem(LKEY,JSON.stringify(logs));renderScoreboard();renderLog()}else{document.getElementById("resultText").textContent=msg;document.getElementById("result").style.display="block"}}
-document.getElementById("addParticipant").onclick=()=>{let inp=document.getElementById("participant"),n=inp.value.trim();if(!n)return;if(people.includes(n)){alert("Bu katılımcı zaten listede.");return}people.push(n);scores[n]=0;inp.value="";localStorage.setItem(PKEY,JSON.stringify(people));localStorage.setItem(SKEY,JSON.stringify(scores));renderPeople()};
-document.getElementById("activeParticipant").onchange=()=>{document.getElementById("activeName").textContent=people[document.getElementById("activeParticipant").value]||"—";renderScoreboard()};
-document.getElementById("next").onclick=()=>{qi=(qi+1)%qset.length;showQuestion()};
-document.getElementById("replay").onclick=showQuestion;
-document.getElementById("restore").onclick=()=>{data=structuredClone(seed);localStorage.setItem(DKEY,JSON.stringify(data));renderData();document.getElementById("persistStatus").textContent="Örnek kayıtlar geri yüklendi.";};
-document.getElementById("clearData").onclick=()=>{if(confirm("Tablodaki tüm örnek kayıtlar temizlensin?")){data=[];localStorage.setItem(DKEY,JSON.stringify(data));renderData()}};
-document.getElementById("persistTest").onclick=()=>{let saved=JSON.parse(localStorage.getItem(DKEY)||"[]");document.getElementById("persistStatus").textContent=`Test sonucu: ${saved.length} kayıt yeniden okundu. Tabloyla ${saved.length===data.length?"aynı":"farklı"} kayıt sayısı.`;logs.unshift("Tarayıcı kalıcılık testi: "+saved.length+" kayıt yeniden okundu.");localStorage.setItem(LKEY,JSON.stringify(logs));renderLog()};
-document.getElementById("resetGame").onclick=()=>{if(confirm("Puanları ve işlem geçmişini sıfırlamak istiyor musunuz?")){scores={};people.forEach(p=>scores[p]=0);logs=[];localStorage.setItem(SKEY,JSON.stringify(scores));localStorage.setItem(LKEY,JSON.stringify(logs));renderScoreboard();renderLog()}};
-renderData();renderPeople();renderLog();showQuestion();
-</script></body></html>
+const SUPABASE_URL = "https://gtfgpapzoickjxuzpwhz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_jdczh7tQYcEyvmplrW9PqA_kGNln29o";
+
+const sb = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+let currentProfile=null;
+let selectedAnswer=null;
+let activeQuestion=null;
+
+function msg(t){document.getElementById("message").textContent=t}
+function escapeHtml(s){
+ return String(s??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+async function signup(){
+ const n=document.getElementById("name").value.trim();
+ const u=document.getElementById("username").value.trim();
+ const e=document.getElementById("email").value.trim();
+ const p=document.getElementById("password").value;
+
+ if(!n||!u||!e||!p){msg("Tüm alanları doldur.");return}
+ if(p.length<6){msg("Şifre en az 6 karakter olmalı.");return}
+
+ msg("Kayıt yapılıyor...");
+ const {data,error}=await sb.auth.signUp({
+  email:e,password:p,
+  options:{data:{full_name:n,username:u}}
+ });
+ if(error){msg(error.message);return}
+ if(data.session){
+  msg("Kayıt başarılı!");
+  await init();
+ }else{
+  msg("Kayıt oluşturuldu. E-posta doğrulaması isteniyorsa e-postanı kontrol et, ardından giriş yap.");
+ }
+}
+
+async function login(){
+ const e=document.getElementById("email").value.trim();
+ const p=document.getElementById("password").value;
+ if(!e||!p){msg("E-posta ve şifre gir.");return}
+ msg("Giriş yapılıyor...");
+ const {error}=await sb.auth.signInWithPassword({email:e,password:p});
+ if(error){msg(error.message);return}
+ await init();
+}
+
+async function logout(){
+ await sb.auth.signOut();
+ currentUser=null;
+ currentProfile=null;
+ document.getElementById("auth").classList.remove("hidden");
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("adminArea").classList.add("hidden");
+ msg("Çıkış yapıldı.");
+}
+
+async function init(){
+ const {data:{user}}=await sb.auth.getUser();
+ if(!user)return;
+ currentUser=user;
+
+ const {data:profile,error}=await sb.from("profiles")
+ .select("*").eq("id",user.id).single();
+
+ if(error){msg("Profil alınamadı: "+error.message);return}
+ currentProfile=profile;
+
+ document.getElementById("auth").classList.add("hidden");
+ document.getElementById("game").classList.remove("hidden");
+ document.getElementById("welcome").textContent=
+ "Hoş geldin, "+(profile.full_name||profile.username||"Öğrenci");
+
+ const isAdmin=profile.role==="admin";
+ document.getElementById("adminArea").classList.toggle("hidden",!isAdmin);
+ document.getElementById("studentArea").classList.toggle("hidden",isAdmin);
+
+ if(isAdmin)await loadQuestions();
+ else await loadActiveQuestion();
+
+ await loadLeaderboard();
+}
+
+async function loadActiveQuestion(){
+ const {data,error}=await sb.rpc("get_active_question");
+ if(error){msg("Soru yükleme hatası: "+error.message);return}
+ activeQuestion=data;
+
+ const area=document.getElementById("questionArea");
+ if(!data){
+  area.innerHTML="<h3>⏳ Öğretmen henüz soru açmadı.</h3><p>Yeni soru açıldığında burada görünecek.</p>";
+  return;
+ }
+
+ let opts=data.options;
+ if(typeof opts==="string"){try{opts=JSON.parse(opts)}catch(e){}}
+ if(!Array.isArray(opts)){area.innerHTML="Soru seçenekleri okunamadı.";return}
+
+ area.innerHTML=`
+ <h3>${escapeHtml(data.question_text)}</h3>
+ <p>⭐ ${escapeHtml(data.points)} puan</p>
+ <div id="options"></div>
+ <button onclick="sendAnswer()">Cevabı Gönder</button>`;
+ const div=document.getElementById("options");
+
+ opts.forEach((o,i)=>{
+  let label=typeof o==="string"?o:(o.text??o.label??o.value??String(o));
+  const b=document.createElement("div");
+  b.className="option";
+  b.textContent=label;
+  b.onclick=()=>{
+   selectedAnswer=label;
+   [...div.children].forEach(x=>x.style.border="none");
+   b.style.border="2px solid #60a5fa";
+  };
+  div.appendChild(b);
+ });
+}
+
+async function sendAnswer(){
+ if(!activeQuestion){msg("Aktif soru yok.");return}
+ if(selectedAnswer===null){msg("Bir seçenek seç.");return}
+
+ msg("Cevap gönderiliyor...");
+ const {data,error}=await sb.rpc("submit_answer",{
+  p_question_id:activeQuestion.id,
+  p_answer_text:selectedAnswer
+ });
+ if(error){msg("Cevap gönderilemedi: "+error.message);return}
+ msg("Cevabın gönderildi!");
+ selectedAnswer=null;
+ await loadActiveQuestion();
+ await loadLeaderboard();
+}
+
+async function loadLeaderboard(){
+ const area=document.getElementById("leaderboard");
+ const {data,error}=await sb.rpc("get_leaderboard");
+ if(error){area.textContent="Sıralama alınamadı: "+error.message;return}
+ if(!data||!data.length){area.textContent="Henüz puan yok.";return}
+
+ let rows=data;
+ area.innerHTML=`<table><thead><tr><th>#</th><th>Katılımcı</th><th>Puan</th></tr></thead><tbody>
+ ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.full_name||r.username||r.name||"Öğrenci")}</td><td>${escapeHtml(r.score??r.points??0)}</td></tr>`).join("")}
+ </tbody></table>`;
+}
+
+async function loadQuestions(){
+ const {data,error}=await sb.from("questions").select("*").order("id");
+ const area=document.getElementById("questionList");
+ if(error){area.textContent="Sorular alınamadı: "+error.message;return}
+ area.innerHTML="";
+ data.forEach(q=>{
+  const b=document.createElement("button");
+  b.textContent="▶ Soruyu Aç: "+q.question_text;
+  b.onclick=()=>openQuestion(q.id);
+  area.appendChild(b);
+ });
+}
+
+async function openQuestion(id){
+ msg("Soru açılıyor...");
+ const {error}=await sb.rpc("admin_set_question",{p_question_id:id});
+ if(error){msg("Soru açılamadı: "+error.message);return}
+ msg("Soru açıldı.");
+ await loadAnswers();
+}
+
+async function closeQuestion(){
+ msg("Soru kapatılıyor...");
+ const {error}=await sb.rpc("admin_close_question");
+ if(error){msg("Soru kapatılamadı: "+error.message);return}
+ msg("Soru kapatıldı.");
+ await loadAnswers();
+}
+
+async function loadAnswers(){
+ const area=document.getElementById("answersArea");
+ const {data,error}=await sb.rpc("admin_answers");
+ if(error){area.textContent="Cevaplar alınamadı: "+error.message;return}
+ if(!data||!data.length){area.textContent="Henüz cevap yok.";return}
+ area.innerHTML=`<table><thead><tr><th>Katılımcı</th><th>Soru</th><th>Cevap</th><th>Doğru</th><th>Puan</th></tr></thead><tbody>
+ ${data.map(r=>`<tr><td>${escapeHtml(r.full_name||r.username||r.name)}</td><td>${escapeHtml(r.question_text||r.question_id)}</td><td>${escapeHtml(r.answer_text)}</td><td>${r.is_correct?"✔":"✖"}</td><td>${escapeHtml(r.points_awarded??0)}</td></tr>`).join("")}
+ </tbody></table>`;
+}
+
+sb.auth.onAuthStateChange((event,session)=>{
+ if(event==="SIGNED_IN")setTimeout(()=>init(),0);
+});
+
+(async()=>{
+ const {data:{session}}=await sb.auth.getSession();
+ if(session)await init();
+})();
+
+// Oyunun durumunu belirli aralıklarla yenile
+setInterval(async()=>{
+ if(currentUser&&currentProfile&&currentProfile.role!=="admin"){
+  await loadActiveQuestion();
+  await loadLeaderboard();
+ }
+},8000);
+</script>
+</body>
+</html>
