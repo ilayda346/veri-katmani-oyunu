@@ -1,0 +1,22 @@
+VERİ KATMANI SINIF MEYDAN OKUMASI
+
+Açılış:
+1. ZIP'i çıkarın.
+2. index.html dosyasına çift tıklayıp Chrome veya Edge'de açın. Sunucu veya internet gerekmez.
+
+Oyunu sınıfta kullanma:
+- Katılımcı/takım adlarını ekleyin, aktif oyuncuyu seçin.
+- Soruları sırayla gösterin. Kod parçacıkları ve kavramsal sorular içerir.
+- Doğru cevap puan kazandırır; uygulama örnek veride CRUD işlemleri uygular.
+- Sonraki soru düğmesiyle devam edin.
+- Örnek verileri geri yükle ile başlangıç tablosunu geri getirirsiniz.
+- F5 yenileme testi simülasyonu, tarayıcıda kaydedilen kayıtları tekrar okuyarak localStorage kalıcılığını gösterir.
+
+Kapsam:
+SQL/normalizasyon/FK/index, MongoDB CRUD ve $set, Prisma schema/model/type-safe sorgu,
+Prisma CRUD, migration, REST API akışı, kalıcılık test mantığı.
+
+ÖNEMLİ:
+Bu etkinlik gerçek PostgreSQL/Prisma API'sine bağlanmış değildir. Tarayıcı localStorage kullanır.
+Kalıcı DB uygulamasının gerçek kanıtı, API sunucusunu yeniden başlatıp GET ile veriyi tekrar
+okumak ve PostgreSQL'de kaydın bulunduğunu göstermektir.
