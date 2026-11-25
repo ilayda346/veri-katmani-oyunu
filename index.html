@@ -288,10 +288,11 @@ async function loadAnswers(){
  </tbody></table>`;
 }
 
-sb.auth.onAuthStateChange((event,session)=>{
- if(event==="SIGNED_IN")setTimeout(()=>init(),0);
+sb.auth.onAuthStateChange(async (event,session)=>{
+ if(event==="SIGNED_IN" && session){
+   await init();
+ }
 });
-
 (async()=>{
  const {data:{session}}=await sb.auth.getSession();
  if(session)await init();
